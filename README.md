@@ -22,8 +22,8 @@ docker compose up -d spanner deltio bigquery
 ```bash
 cp tools/config.example.json tools/config.json
 
-go run ./tools bootstrap
-go run ./tools pubsub-setup
+go run . bootstrap
+go run . pubsub-setup
 ```
 
 3) Start the Beam pipeline:
@@ -35,40 +35,65 @@ docker compose up -d beam-runner
 4) Start the writer to generate changes:
 
 ```bash
-go run ./tools writer
+go run . writer
 ```
 
 5) Start the BigQuery sink (new terminal):
 
 ```bash
-go run ./tools bq-sink
+go run . bq-sink
+```
+
+Or run it via Docker:
+
+```bash
+docker compose up -d bq-sink
 ```
 
 6) Insert an outbox message (optional):
 
 ```bash
-go run ./tools outbox-insert \
+go run . outbox-insert \
   --event-type proto.outbox \
   --account-id account-123 \
   --balance 42
 ```
 
+Include nested account details (oneof) if desired:
+
+```bash
+go run . outbox-insert \
+  --account-id account-123 \
+  --balance 42 \
+  --bsb 123456 \
+  --account-number 987654321
+```
+
+Or use a PayID identifier:
+
+```bash
+go run . outbox-insert \
+  --account-id account-123 \
+  --balance 42 \
+  --payid user@example.com
+```
+
 You can also provide a proto-encoded payload from a file:
 
 ```bash
-go run ./tools outbox-insert --payload-file ./tmp/outbox.bin
+go run . outbox-insert --payload-file ./tmp/outbox.bin
 ```
 
 7) Verify with any subscriber:
 
 ```bash
-go run ./tools outbox-subscribe
+go run . outbox-subscribe
 ```
 
 8) Verify BigQuery table + rows:
 
 ```bash
-go run ./tools bq-check
+go run . bq-check
 ```
 
 ## Configuration
@@ -85,7 +110,8 @@ Environment variables (defaults shown in `docker-compose.yml`):
 
 ## Proto schema
 
-The outbox payload schema lives at `proto/outbox/v1/outbox.proto`. Regenerate Go types with:
+The outbox payload schema lives at `proto/outbox/v1/outbox.proto`. It includes nested account details with a `oneof`.
+Regenerate Go types with:
 
 ```bash
 buf generate
@@ -101,3 +127,11 @@ docker run --rm -v "$PWD:/workspace" -w /workspace bufbuild/buf:1.34.0 generate
 The tools read settings from `tools/config.json` (or a path passed via `--config`). See `tools/config.example.json`.
 All tool commands require the config file and ignore environment variables.
 `bq-sink` uses `proto_message` to derive dataset/table names (dataset = lowercased full name with dots replaced by underscores; table = message name).
+
+## End-to-end test
+
+There is an integration test that runs the same steps as the manual workflow. It requires the emulators and Beam runner to be running.
+
+```bash
+RUN_E2E=1 go test ./test -run TestEndToEndBigQuery -v
+```

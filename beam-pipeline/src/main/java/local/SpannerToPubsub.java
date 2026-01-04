@@ -90,12 +90,7 @@ public class SpannerToPubsub {
         Pipeline pipeline = Pipeline.create(options);
 
         int startOffsetSeconds = options.getStartOffsetSeconds() == null ? 60 : options.getStartOffsetSeconds();
-        Timestamp now = Timestamp.now();
-        long startSeconds = now.getSeconds() - startOffsetSeconds - 1;
-        if (startSeconds < 0) {
-            startSeconds = 0;
-        }
-        Timestamp startTimestamp = Timestamp.ofTimeSecondsAndNanos(startSeconds, 0);
+        Timestamp startTimestamp = computeStartTimestamp(Timestamp.now(), startOffsetSeconds);
         LOG.info("changeStreamStartTimestamp={} (offsetSeconds={})", startTimestamp.toString(), startOffsetSeconds);
 
         PCollection<DataChangeRecord> records = pipeline.apply(
@@ -117,6 +112,15 @@ public class SpannerToPubsub {
                 options.getPubsubTopic())));
 
         pipeline.run().waitUntilFinish();
+    }
+
+    static Timestamp computeStartTimestamp(Timestamp now, int startOffsetSeconds) {
+        // Subtract an extra second to avoid missing boundary events.
+        long startSeconds = now.getSeconds() - startOffsetSeconds - 1;
+        if (startSeconds < 0) {
+            startSeconds = 0;
+        }
+        return Timestamp.ofTimeSecondsAndNanos(startSeconds, 0);
     }
 
     private static String extractTopicId(String topic) {
@@ -153,26 +157,34 @@ public class SpannerToPubsub {
                 return;
             }
             for (Mod mod : mods) {
-                String newValuesJson = mod == null ? null : mod.getNewValuesJson();
-                if (newValuesJson == null || newValuesJson.isEmpty()) {
+                byte[] payload = extractPayload(mod);
+                if (payload == null || payload.length == 0) {
                     continue;
                 }
-                JsonObject obj = GSON.fromJson(newValuesJson, JsonObject.class);
-                if (obj == null) {
-                    continue;
-                }
-                JsonElement payloadElement = getPayloadElement(obj);
-                if (payloadElement == null || payloadElement.isJsonNull()) {
-                    continue;
-                }
-                byte[] payload = decodePayload(payloadElement.getAsString());
-                if (payload.length == 0) {
-                    continue;
-                }
-                LOG.info("outbox payload emitted bytes={}", payload.length);
+                LOG.debug("outbox payload emitted bytes={}", payload.length);
                 context.output(payload);
             }
         }
+    }
+
+    private static byte[] extractPayload(Mod mod) {
+        String newValuesJson = mod == null ? null : mod.getNewValuesJson();
+        return extractPayloadFromJson(newValuesJson);
+    }
+
+    static byte[] extractPayloadFromJson(String newValuesJson) {
+        if (newValuesJson == null || newValuesJson.isEmpty()) {
+            return null;
+        }
+        JsonObject obj = GSON.fromJson(newValuesJson, JsonObject.class);
+        if (obj == null) {
+            return null;
+        }
+        JsonElement payloadElement = getPayloadElement(obj);
+        if (payloadElement == null || payloadElement.isJsonNull()) {
+            return null;
+        }
+        return decodePayload(payloadElement.getAsString());
     }
 
     private static JsonElement getPayloadElement(JsonObject obj) {
@@ -208,11 +220,7 @@ public class SpannerToPubsub {
 
             String topicId = extractTopicId(topic);
             channel = ManagedChannelBuilder.forTarget(emulatorHost).usePlaintext().build();
-            Publisher.Builder builder = Publisher.newBuilder(TopicName.of(projectId, topicId))
-                .setChannelProvider(FixedTransportChannelProvider.create(
-                    GrpcTransportChannel.create(channel)))
-                .setCredentialsProvider(NoCredentialsProvider.create());
-            publisher = builder.build();
+            publisher = buildPublisher(channel, TopicName.of(projectId, topicId));
             LOG.info("gRPC publisher configured: emulatorHost={} topicId={}", emulatorHost, topicId);
         }
 
@@ -234,5 +242,13 @@ public class SpannerToPubsub {
             ApiFuture<String> future = publisher.publish(message);
             future.get();
         }
+    }
+
+    private static Publisher buildPublisher(ManagedChannel channel, TopicName topicName) throws Exception {
+        return Publisher.newBuilder(topicName)
+            .setChannelProvider(FixedTransportChannelProvider.create(
+                GrpcTransportChannel.create(channel)))
+            .setCredentialsProvider(NoCredentialsProvider.create())
+            .build();
     }
 }

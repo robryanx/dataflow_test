@@ -4,3 +4,4 @@ tmp/
 
 # Gradle
 **/.gradle/
+**/build/

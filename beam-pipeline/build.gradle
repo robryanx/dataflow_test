@@ -1,7 +1,7 @@
 plugins {
     id 'java'
     id 'application'
-    id 'com.github.johnrengelman.shadow' version '8.1.1'
+    id 'com.gradleup.shadow' version '9.3.0'
 }
 
 group = 'local'
@@ -24,6 +24,8 @@ dependencies {
     implementation 'com.google.code.gson:gson:2.11.0'
 
     runtimeOnly 'org.slf4j:slf4j-simple:1.7.36'
+    testImplementation 'org.junit.jupiter:junit-jupiter:6.0.1'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher:6.0.1'
 }
 
 application {
@@ -31,8 +33,10 @@ application {
 }
 
 java {
+    sourceCompatibility = JavaVersion.VERSION_21
+    targetCompatibility = JavaVersion.VERSION_21
     toolchain {
-        languageVersion = JavaLanguageVersion.of(17)
+        languageVersion = JavaLanguageVersion.of(21)
     }
 }
 
@@ -41,4 +45,8 @@ shadowJar {
     archiveClassifier.set('all')
     archiveVersion.set('')
     mergeServiceFiles()
+}
+
+test {
+    useJUnitPlatform()
 }

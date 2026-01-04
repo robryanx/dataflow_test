@@ -13,6 +13,15 @@ services:
     command: ["--project=emulator-project", "--port=9050"]
     ports:
       - "9050:9050"
+  bq-sink:
+    build:
+      context: .
+      dockerfile: tools/bq-sink.Dockerfile
+    depends_on:
+      - deltio
+      - bigquery
+    volumes:
+      - ./:/workspace
   beam-runner:
     build:
       context: ./beam-pipeline
