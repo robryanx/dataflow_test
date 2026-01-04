@@ -1,0 +1,46 @@
+services:
+  spanner:
+    image: gcr.io/cloud-spanner-emulator/emulator
+    ports:
+      - "9010:9010"
+      - "9020:9020"
+  deltio:
+    image: ${DELTIO_IMAGE:-ghcr.io/jeffijoe/deltio:latest}
+    ports:
+      - "${DELTIO_PORT:-8085}:8085"
+  bigquery:
+    image: ghcr.io/goccy/bigquery-emulator:latest
+    command: ["--project=emulator-project", "--port=9050"]
+    ports:
+      - "9050:9050"
+  beam-runner:
+    build:
+      context: ./beam-pipeline
+    depends_on:
+      - spanner
+      - deltio
+    environment:
+      SPANNER_PROJECT_ID: ${SPANNER_PROJECT_ID:-emulator-project}
+      SPANNER_INSTANCE_ID: ${SPANNER_INSTANCE_ID:-test-instance}
+      SPANNER_DATABASE_ID: ${SPANNER_DATABASE_ID:-test-db}
+      SPANNER_CHANGE_STREAM: ${SPANNER_CHANGE_STREAM:-AccountsChanges}
+      SPANNER_EMULATOR_HOST: spanner:9010
+      PUBSUB_EMULATOR_HOST: deltio:8085
+      PUBSUB_TOPIC: ${PUBSUB_TOPIC:-projects/emulator-project/topics/accounts-changes}
+      START_OFFSET_SECONDS: ${START_OFFSET_SECONDS:-5}
+  tools:
+    image: golang:1.22
+    working_dir: /workspace
+    volumes:
+      - ./:/workspace
+    environment:
+      SPANNER_PROJECT_ID: ${SPANNER_PROJECT_ID:-emulator-project}
+      SPANNER_INSTANCE_ID: ${SPANNER_INSTANCE_ID:-test-instance}
+      SPANNER_DATABASE_ID: ${SPANNER_DATABASE_ID:-test-db}
+      SPANNER_CHANGE_STREAM: ${SPANNER_CHANGE_STREAM:-AccountsChanges}
+      SPANNER_EMULATOR_HOST: spanner:9010
+      PUBSUB_PROJECT_ID: ${PUBSUB_PROJECT_ID:-emulator-project}
+      PUBSUB_TOPIC: ${PUBSUB_TOPIC:-accounts-changes}
+      PUBSUB_SUBSCRIPTION: ${PUBSUB_SUBSCRIPTION:-accounts-changes-sub}
+      PUBSUB_EMULATOR_HOST: deltio:8085
+    entrypoint: ["sleep", "infinity"]

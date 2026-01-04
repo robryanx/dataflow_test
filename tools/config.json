@@ -1,0 +1,17 @@
+{
+  "spanner_project_id": "emulator-project",
+  "spanner_instance_id": "test-instance",
+  "spanner_database_id": "test-db",
+  "spanner_change_stream": "AccountsChanges",
+  "spanner_emulator_host": "localhost:9010",
+  "pubsub_project_id": "emulator-project",
+  "pubsub_topic": "accounts-changes",
+  "pubsub_subscription": "accounts-changes-sub",
+  "pubsub_emulator_host": "localhost:8085",
+  "bigquery_project_id": "emulator-project",
+  "bigquery_emulator_host": "localhost:9050",
+  "proto_message": "outbox.v1.OutboxEvent",
+  "outbox_event_type": "proto.outbox",
+  "write_interval_ms": 1000,
+  "account_count": 5
+}

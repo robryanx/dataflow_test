@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+package outbox.v1;
+
+option go_package = "dataflow_test/gen/go/proto/outbox/v1;outboxv1";
+
+message OutboxEvent {
+  string outbox_id = 1;
+  string event_type = 2;
+  string account_id = 3;
+  int64 balance = 4;
+}

@@ -1,0 +1,1 @@
+bigquery sink ready: dataset=outbox_v1_outboxevent table=OutboxEvent proto=outbox.v1.OutboxEvent

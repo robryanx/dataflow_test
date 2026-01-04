@@ -1,0 +1,44 @@
+plugins {
+    id 'java'
+    id 'application'
+    id 'com.github.johnrengelman.shadow' version '8.1.1'
+}
+
+group = 'local'
+version = '0.1.0'
+
+repositories {
+    mavenCentral()
+}
+
+ext {
+    beamVersion = '2.53.0'
+}
+
+dependencies {
+    implementation platform("org.apache.beam:beam-sdks-java-bom:${beamVersion}")
+    implementation 'org.apache.beam:beam-sdks-java-core'
+    implementation 'org.apache.beam:beam-runners-direct-java'
+    implementation 'org.apache.beam:beam-sdks-java-io-google-cloud-platform'
+    implementation 'com.google.cloud:google-cloud-pubsub:1.123.16'
+    implementation 'com.google.code.gson:gson:2.11.0'
+
+    runtimeOnly 'org.slf4j:slf4j-simple:1.7.36'
+}
+
+application {
+    mainClass = 'local.SpannerToPubsub'
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
+}
+
+shadowJar {
+    archiveBaseName.set('app')
+    archiveClassifier.set('all')
+    archiveVersion.set('')
+    mergeServiceFiles()
+}
