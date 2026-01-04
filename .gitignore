@@ -1,0 +1,6 @@
+# Build and temp artifacts
+.tmp/
+tmp/
+
+# Gradle
+**/.gradle/

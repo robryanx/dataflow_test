@@ -469,7 +469,7 @@ func runOutboxSubscribe(args []string) error {
 			if err := proto.Unmarshal(msg.Data, event); err != nil {
 				log.Printf("decode outbox event failed: %v", err)
 			} else {
-				log.Printf("outbox event: outbox_id=%s event_type=%s account_id=%s balance=%d", event.GetOutboxId(), event.GetEventType(), event.GetAccountId(), event.GetBalance())
+				log.Printf("outbox event: outbox_id=%s event_type=%s account_id=%s balance=%d details=%s", event.GetOutboxId(), event.GetEventType(), event.GetAccountId(), event.GetBalance(), formatAccountDetails(event.GetAccountDetails()))
 			}
 		}
 		msg.Ack()
@@ -658,6 +658,9 @@ func runOutboxInsert(args []string) error {
 	eventType := fs.String("event-type", cfg.OutboxEventType, "event type")
 	accountID := fs.String("account-id", "", "account id")
 	balance := fs.Int64("balance", 0, "balance")
+	payID := fs.String("payid", "", "payid identifier (oneof with bsb/account)")
+	bsb := fs.String("bsb", "", "bsb identifier")
+	accountNumber := fs.String("account-number", "", "account number identifier")
 	payloadFile := fs.String("payload-file", "", "payload file path")
 	payloadBase64 := fs.String("payload-base64", "", "payload base64")
 	payloadText := fs.String("payload-text", "", "payload text")
@@ -680,6 +683,7 @@ func runOutboxInsert(args []string) error {
 			AccountId: *accountID,
 			Balance:   *balance,
 		}
+		applyAccountDetails(event, *payID, *bsb, *accountNumber)
 		payload, err = proto.Marshal(event)
 		if err != nil {
 			return fmt.Errorf("marshal event: %w", err)
@@ -990,6 +994,44 @@ func logOutboxLatest(ctx context.Context, client *spanner.Client) error {
 	}
 	log.Printf("outbox latest: id=%s created_at=%s", outboxID, created.Time.Format(time.RFC3339Nano))
 	return nil
+}
+
+func applyAccountDetails(event *outboxv1.OutboxEvent, payID, bsb, accountNumber string) {
+	if payID == "" && bsb == "" && accountNumber == "" {
+		return
+	}
+	details := &outboxv1.AccountDetails{}
+	if payID != "" {
+		details.Identifier = &outboxv1.AccountDetails_Payid{Payid: payID}
+		event.AccountDetails = details
+		return
+	}
+	if bsb != "" || accountNumber != "" {
+		details.Identifier = &outboxv1.AccountDetails_BsbAccount{
+			BsbAccount: &outboxv1.BsbAccount{
+				Bsb:           bsb,
+				AccountNumber: accountNumber,
+			},
+		}
+		event.AccountDetails = details
+	}
+}
+
+func formatAccountDetails(details *outboxv1.AccountDetails) string {
+	if details == nil {
+		return "none"
+	}
+	switch v := details.Identifier.(type) {
+	case *outboxv1.AccountDetails_Payid:
+		return fmt.Sprintf("payid=%s", v.Payid)
+	case *outboxv1.AccountDetails_BsbAccount:
+		if v.BsbAccount == nil {
+			return "bsb_account=<nil>"
+		}
+		return fmt.Sprintf("bsb=%s account_number=%s", v.BsbAccount.Bsb, v.BsbAccount.AccountNumber)
+	default:
+		return "unknown"
+	}
 }
 
 func readPayload(filePath, payloadBase64, payloadText string) ([]byte, error) {

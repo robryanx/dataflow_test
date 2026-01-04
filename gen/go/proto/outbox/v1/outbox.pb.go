@@ -22,13 +22,14 @@ const (
 )
 
 type OutboxEvent struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	OutboxId      string                 `protobuf:"bytes,1,opt,name=outbox_id,json=outboxId,proto3" json:"outbox_id,omitempty"`
-	EventType     string                 `protobuf:"bytes,2,opt,name=event_type,json=eventType,proto3" json:"event_type,omitempty"`
-	AccountId     string                 `protobuf:"bytes,3,opt,name=account_id,json=accountId,proto3" json:"account_id,omitempty"`
-	Balance       int64                  `protobuf:"varint,4,opt,name=balance,proto3" json:"balance,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	OutboxId       string                 `protobuf:"bytes,1,opt,name=outbox_id,json=outboxId,proto3" json:"outbox_id,omitempty"`
+	EventType      string                 `protobuf:"bytes,2,opt,name=event_type,json=eventType,proto3" json:"event_type,omitempty"`
+	AccountId      string                 `protobuf:"bytes,3,opt,name=account_id,json=accountId,proto3" json:"account_id,omitempty"`
+	Balance        int64                  `protobuf:"varint,4,opt,name=balance,proto3" json:"balance,omitempty"`
+	AccountDetails *AccountDetails        `protobuf:"bytes,5,opt,name=account_details,json=accountDetails,proto3" json:"account_details,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *OutboxEvent) Reset() {
@@ -89,18 +90,170 @@ func (x *OutboxEvent) GetBalance() int64 {
 	return 0
 }
 
+func (x *OutboxEvent) GetAccountDetails() *AccountDetails {
+	if x != nil {
+		return x.AccountDetails
+	}
+	return nil
+}
+
+type AccountDetails struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Types that are valid to be assigned to Identifier:
+	//
+	//	*AccountDetails_BsbAccount
+	//	*AccountDetails_Payid
+	Identifier    isAccountDetails_Identifier `protobuf_oneof:"identifier"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *AccountDetails) Reset() {
+	*x = AccountDetails{}
+	mi := &file_proto_outbox_v1_outbox_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AccountDetails) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AccountDetails) ProtoMessage() {}
+
+func (x *AccountDetails) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_outbox_v1_outbox_proto_msgTypes[1]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AccountDetails.ProtoReflect.Descriptor instead.
+func (*AccountDetails) Descriptor() ([]byte, []int) {
+	return file_proto_outbox_v1_outbox_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *AccountDetails) GetIdentifier() isAccountDetails_Identifier {
+	if x != nil {
+		return x.Identifier
+	}
+	return nil
+}
+
+func (x *AccountDetails) GetBsbAccount() *BsbAccount {
+	if x != nil {
+		if x, ok := x.Identifier.(*AccountDetails_BsbAccount); ok {
+			return x.BsbAccount
+		}
+	}
+	return nil
+}
+
+func (x *AccountDetails) GetPayid() string {
+	if x != nil {
+		if x, ok := x.Identifier.(*AccountDetails_Payid); ok {
+			return x.Payid
+		}
+	}
+	return ""
+}
+
+type isAccountDetails_Identifier interface {
+	isAccountDetails_Identifier()
+}
+
+type AccountDetails_BsbAccount struct {
+	BsbAccount *BsbAccount `protobuf:"bytes,1,opt,name=bsb_account,json=bsbAccount,proto3,oneof"`
+}
+
+type AccountDetails_Payid struct {
+	Payid string `protobuf:"bytes,2,opt,name=payid,proto3,oneof"`
+}
+
+func (*AccountDetails_BsbAccount) isAccountDetails_Identifier() {}
+
+func (*AccountDetails_Payid) isAccountDetails_Identifier() {}
+
+type BsbAccount struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Bsb           string                 `protobuf:"bytes,1,opt,name=bsb,proto3" json:"bsb,omitempty"`
+	AccountNumber string                 `protobuf:"bytes,2,opt,name=account_number,json=accountNumber,proto3" json:"account_number,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *BsbAccount) Reset() {
+	*x = BsbAccount{}
+	mi := &file_proto_outbox_v1_outbox_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *BsbAccount) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*BsbAccount) ProtoMessage() {}
+
+func (x *BsbAccount) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_outbox_v1_outbox_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use BsbAccount.ProtoReflect.Descriptor instead.
+func (*BsbAccount) Descriptor() ([]byte, []int) {
+	return file_proto_outbox_v1_outbox_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *BsbAccount) GetBsb() string {
+	if x != nil {
+		return x.Bsb
+	}
+	return ""
+}
+
+func (x *BsbAccount) GetAccountNumber() string {
+	if x != nil {
+		return x.AccountNumber
+	}
+	return ""
+}
+
 var File_proto_outbox_v1_outbox_proto protoreflect.FileDescriptor
 
 const file_proto_outbox_v1_outbox_proto_rawDesc = "" +
 	"\n" +
-	"\x1cproto/outbox/v1/outbox.proto\x12\toutbox.v1\"\x82\x01\n" +
+	"\x1cproto/outbox/v1/outbox.proto\x12\toutbox.v1\"\xc6\x01\n" +
 	"\vOutboxEvent\x12\x1b\n" +
 	"\toutbox_id\x18\x01 \x01(\tR\boutboxId\x12\x1d\n" +
 	"\n" +
 	"event_type\x18\x02 \x01(\tR\teventType\x12\x1d\n" +
 	"\n" +
 	"account_id\x18\x03 \x01(\tR\taccountId\x12\x18\n" +
-	"\abalance\x18\x04 \x01(\x03R\abalanceB/Z-dataflow_test/gen/go/proto/outbox/v1;outboxv1b\x06proto3"
+	"\abalance\x18\x04 \x01(\x03R\abalance\x12B\n" +
+	"\x0faccount_details\x18\x05 \x01(\v2\x19.outbox.v1.AccountDetailsR\x0eaccountDetails\"p\n" +
+	"\x0eAccountDetails\x128\n" +
+	"\vbsb_account\x18\x01 \x01(\v2\x15.outbox.v1.BsbAccountH\x00R\n" +
+	"bsbAccount\x12\x16\n" +
+	"\x05payid\x18\x02 \x01(\tH\x00R\x05payidB\f\n" +
+	"\n" +
+	"identifier\"E\n" +
+	"\n" +
+	"BsbAccount\x12\x10\n" +
+	"\x03bsb\x18\x01 \x01(\tR\x03bsb\x12%\n" +
+	"\x0eaccount_number\x18\x02 \x01(\tR\raccountNumberB/Z-dataflow_test/gen/go/proto/outbox/v1;outboxv1b\x06proto3"
 
 var (
 	file_proto_outbox_v1_outbox_proto_rawDescOnce sync.Once
@@ -114,16 +267,20 @@ func file_proto_outbox_v1_outbox_proto_rawDescGZIP() []byte {
 	return file_proto_outbox_v1_outbox_proto_rawDescData
 }
 
-var file_proto_outbox_v1_outbox_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
+var file_proto_outbox_v1_outbox_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
 var file_proto_outbox_v1_outbox_proto_goTypes = []any{
-	(*OutboxEvent)(nil), // 0: outbox.v1.OutboxEvent
+	(*OutboxEvent)(nil),    // 0: outbox.v1.OutboxEvent
+	(*AccountDetails)(nil), // 1: outbox.v1.AccountDetails
+	(*BsbAccount)(nil),     // 2: outbox.v1.BsbAccount
 }
 var file_proto_outbox_v1_outbox_proto_depIdxs = []int32{
-	0, // [0:0] is the sub-list for method output_type
-	0, // [0:0] is the sub-list for method input_type
-	0, // [0:0] is the sub-list for extension type_name
-	0, // [0:0] is the sub-list for extension extendee
-	0, // [0:0] is the sub-list for field type_name
+	1, // 0: outbox.v1.OutboxEvent.account_details:type_name -> outbox.v1.AccountDetails
+	2, // 1: outbox.v1.AccountDetails.bsb_account:type_name -> outbox.v1.BsbAccount
+	2, // [2:2] is the sub-list for method output_type
+	2, // [2:2] is the sub-list for method input_type
+	2, // [2:2] is the sub-list for extension type_name
+	2, // [2:2] is the sub-list for extension extendee
+	0, // [0:2] is the sub-list for field type_name
 }
 
 func init() { file_proto_outbox_v1_outbox_proto_init() }
@@ -131,13 +288,17 @@ func file_proto_outbox_v1_outbox_proto_init() {
 	if File_proto_outbox_v1_outbox_proto != nil {
 		return
 	}
+	file_proto_outbox_v1_outbox_proto_msgTypes[1].OneofWrappers = []any{
+		(*AccountDetails_BsbAccount)(nil),
+		(*AccountDetails_Payid)(nil),
+	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_outbox_v1_outbox_proto_rawDesc), len(file_proto_outbox_v1_outbox_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   1,
+			NumMessages:   3,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

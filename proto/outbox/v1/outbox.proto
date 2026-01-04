@@ -9,4 +9,17 @@ message OutboxEvent {
   string event_type = 2;
   string account_id = 3;
   int64 balance = 4;
+  AccountDetails account_details = 5;
+}
+
+message AccountDetails {
+  oneof identifier {
+    BsbAccount bsb_account = 1;
+    string payid = 2;
+  }
+}
+
+message BsbAccount {
+  string bsb = 1;
+  string account_number = 2;
 }
